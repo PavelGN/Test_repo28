@@ -1,11 +1,17 @@
+import pytest
+from Test_repo28.data.data import generate_meme_payload
+from Test_repo28.data.data import INVALID_MEME_FIELDS
+from Test_repo28.endpoints.base import BaseClient
+
+
 def test_get_nonexistent_meme(get_meme_id_api):
     resp = get_meme_id_api.get_meme(99999999)
-    assert resp.status_code == 404
+    BaseClient.assert_status_code(resp, 404)
 
 
 def test_delete_nonexistent_meme(delete_meme_id_api):
     resp = delete_meme_id_api.delete_meme(99999999)
-    assert resp.status_code == 404
+    BaseClient.assert_status_code(resp, 404)
 
 
 def test_update_nonexistent_meme(put_meme_id_api):
@@ -16,46 +22,52 @@ def test_update_nonexistent_meme(put_meme_id_api):
         tags=["test"],
         info={"a": 1},
     )
-    assert resp.status_code == 404
+    BaseClient.assert_status_code(resp, 404)
 
 
-def test_create_meme_without_required_field(post_meme_api, meme_payload):
+@pytest.mark.parametrize("field,invalid_value", INVALID_MEME_FIELDS)
+def test_create_meme_with_invalid_data(post_meme_api, field, invalid_value):
+    payload = generate_meme_payload()
+    payload[field] = invalid_value
+
     resp = post_meme_api.create_meme(
-        text=None,
-        url=meme_payload["url"],
-        tags=meme_payload["tags"],
-        info=meme_payload["info"],
+        text=payload["text"],
+        url=payload["url"],
+        tags=payload["tags"],
+        info=payload["info"],
     )
-    assert resp.status_code == 400
+
+    BaseClient.assert_status_code(resp, 400)
 
 
-def test_create_meme_with_invalid_text_type(post_meme_api, meme_payload):
-    resp = post_meme_api.create_meme(
-        text=123,
-        url=meme_payload["url"],
-        tags=meme_payload["tags"],
-        info=meme_payload["info"],
+
+@pytest.mark.parametrize("field,invalid_value", INVALID_MEME_FIELDS)
+def test_update_meme_with_invalid_data(
+    created_meme,
+    put_meme_id_api,
+    field,
+    invalid_value,
+):
+    meme_id, payload = created_meme
+
+    payload[field] = invalid_value
+
+    resp = put_meme_id_api.update_meme(
+        meme_id=meme_id,
+        text=payload["text"],
+        url=payload["url"],
+        tags=payload["tags"],
+        info=payload["info"],
     )
-    assert resp.status_code == 400
+
+    BaseClient.assert_status_code(resp, 400)
 
 
-def test_create_meme_with_invalid_tags_type(post_meme_api, meme_payload):
-    resp = post_meme_api.create_meme(
-        text=meme_payload["text"],
-        url=meme_payload["url"],
-        tags="not-an-array",
-        info=meme_payload["info"],
-    )
-    assert resp.status_code == 400
+def test_token_is_not_alive(auth_api):
+    resp = auth_api.token_is_alive("invalid_token_123")
+    BaseClient.assert_status_code(resp, 404)
 
 
-def test_create_meme_with_invalid_info_type(post_meme_api, meme_payload):
-    resp = post_meme_api.create_meme(
-        text=meme_payload["text"],
-        url=meme_payload["url"],
-        tags=meme_payload["tags"],
-        info="not-an-object",
-    )
-    assert resp.status_code == 400
-
-
+def test_authorize_without_name(auth_api):
+    resp = auth_api.client.post("/authorize", json={})
+    BaseClient.assert_status_code(resp, 400)

@@ -1,7 +1,6 @@
 import pytest
 import requests
-import random
-import string
+from Test_repo28.data.data import generate_meme_payload
 
 from Test_repo28.endpoints.base import BaseClient
 from Test_repo28.endpoints.authorize import AuthorizationAPI
@@ -76,35 +75,24 @@ def delete_meme_id_api(base_client, auth_token):
 
 
 @pytest.fixture
-def meme_payload():
-    text = "test-" + "".join(random.choices(string.ascii_letters, k=6))
-    url = (
-        "https://www.boredpanda.com/blog/wp-content/uploads/2022/09/"
-        "it-humor-and-memes-204-632853f7bbbad__700.jpg"
-    )
-    tags = ["funny", "test"]
-    info = {"meta": random.randint(1, 100)}
+def created_meme(post_meme_api, delete_meme_id_api):
+    payload = generate_meme_payload()
 
-    return {
-        "text": text,
-        "url": url,
-        "tags": tags,
-        "info": info,
-    }
-
-
-@pytest.fixture
-def created_meme(post_meme_api, delete_meme_id_api, meme_payload):
     resp = post_meme_api.create_meme(
-        text=meme_payload["text"],
-        url=meme_payload["url"],
-        tags=meme_payload["tags"],
-        info=meme_payload["info"],
+        text=payload["text"],
+        url=payload["url"],
+        tags=payload["tags"],
+        info=payload["info"],
     )
-    assert resp.status_code == 200, resp.text
+    BaseClient.assert_status_code(resp, 200)
 
     meme_id = resp.json()["id"]
 
-    yield meme_id
+    yield meme_id, payload
 
     delete_meme_id_api.delete_meme(meme_id)
+
+
+@pytest.fixture
+def auth_api(base_client):
+    return AuthorizationAPI(base_client)
