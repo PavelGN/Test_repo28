@@ -30,22 +30,16 @@ def base_client(session):
 def auth_token(base_client):
     auth_api = AuthorizationAPI(base_client)
 
-    # Если токена нет или он мёртв — создаём новый
-    resp = auth_api.create_token("pytest_user")
-    assert resp.status_code == 200, (
-        "Не удалось создать токен: "
-        f"{resp.text}"
-    )
-    token = resp.json().get("token")
-    assert token, "В ответе авторизации нет поля 'token'"
+    auth_api.create_token("pytest_user")
+    base_client.assert_status_code(200)
+    auth_api.assert_token_response()
 
-    # Проверка, что токен живой
-    alive = auth_api.token_is_alive(token)
-    assert alive.status_code == 200, "Полученный токен не работает"
+    token = base_client.response.json()["token"]
 
-    # Устанавливаем токен
+    auth_api.token_is_alive(token)
+    base_client.assert_status_code(200)
+
     base_client.set_auth_token(token)
-
     return token
 
 
@@ -78,15 +72,15 @@ def delete_meme_id_api(base_client, auth_token):
 def created_meme(post_meme_api, delete_meme_id_api):
     payload = generate_meme_payload()
 
-    resp = post_meme_api.create_meme(
+    post_meme_api.create_meme(
         text=payload["text"],
         url=payload["url"],
         tags=payload["tags"],
         info=payload["info"],
     )
-    BaseClient.assert_status_code(resp, 200)
+    post_meme_api.client.assert_status_code(200)
 
-    meme_id = resp.json()["id"]
+    meme_id = post_meme_api.client.response.json()["id"]
 
     yield meme_id, payload
 
@@ -96,3 +90,36 @@ def created_meme(post_meme_api, delete_meme_id_api):
 @pytest.fixture
 def auth_api(base_client):
     return AuthorizationAPI(base_client)
+
+
+@pytest.fixture
+def unauth_base_client():
+    session = requests.Session()
+    client = BaseClient(BASE_URL, session)
+    yield client
+    session.close()
+
+
+@pytest.fixture
+def unauth_post_meme_api(unauth_base_client):
+    return PostMemeAPI(unauth_base_client)
+
+
+@pytest.fixture
+def unauth_get_meme_api(unauth_base_client):
+    return GetMemeAPI(unauth_base_client)
+
+
+@pytest.fixture
+def unauth_get_meme_id_api(unauth_base_client):
+    return GetMemeByIdAPI(unauth_base_client)
+
+
+@pytest.fixture
+def unauth_put_meme_id_api(unauth_base_client):
+    return PutMemeByIdAPI(unauth_base_client)
+
+
+@pytest.fixture
+def unauth_delete_meme_id_api(unauth_base_client):
+    return DeleteMemeByIdAPI(unauth_base_client)

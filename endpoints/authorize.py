@@ -33,3 +33,8 @@ class AuthorizationAPI:
             return None
 
         return self.client.get(f"/authorize/{token}")
+
+    def assert_token_response(self):
+        body = self.client.response.json()
+        assert "token" in body
+        assert body["token"]

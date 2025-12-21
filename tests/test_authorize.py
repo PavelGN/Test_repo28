@@ -1,25 +1,22 @@
-from Test_repo28.endpoints.base import BaseClient
-
-
 def test_authorize_with_valid_name(auth_api):
-    resp = auth_api.create_token("test_user")
-    BaseClient.assert_status_code(resp, 200)
+    auth_api.create_token("test_user")
 
-    body = resp.json()
-    BaseClient.assert_token_response(body)
+    auth_api.client.assert_status_code(200)
+    auth_api.assert_token_response()
 
 
 def test_authorize_with_empty_name(auth_api):
-    resp = auth_api.create_token("")
-    BaseClient.assert_status_code(resp, 200)
+    auth_api.create_token("")
 
-    body = resp.json()
-    BaseClient.assert_token_response(body)
+    auth_api.client.assert_status_code(200)
+    auth_api.assert_token_response()
 
 
 def test_token_is_alive(auth_api):
-    create_resp = auth_api.create_token("alive_user")
-    token = create_resp.json()["token"]
+    auth_api.create_token("alive_user")
+    auth_api.client.assert_status_code(200)
 
-    check_resp = auth_api.token_is_alive(token)
-    BaseClient.assert_status_code(check_resp, 200)
+    token = auth_api.client.response.json()["token"]
+
+    auth_api.token_is_alive(token)
+    auth_api.client.assert_status_code(200)
