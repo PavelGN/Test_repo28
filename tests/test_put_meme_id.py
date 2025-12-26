@@ -16,8 +16,8 @@ def test_update_meme(created_meme, put_meme_id_api, get_meme_id_api):
         tags=payload["tags"],
         info=payload["info"],
     )
-    put_meme_id_api.client.assert_status_code(200)
+    put_meme_id_api.assert_status_code(200)
 
     get_meme_id_api.get_meme(meme_id)
-    get_meme_id_api.client.assert_status_code(200)
+    get_meme_id_api.assert_status_code(200)
     get_meme_id_api.assert_meme_equals(payload)

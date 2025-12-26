@@ -33,3 +33,10 @@ class BaseClient:
             f"Expected status {expected_status}, "
             f"got {self.response.status_code}. "
         )
+
+    def assert_meme_equals(self, expected: dict):
+        body = self.response.json()
+        assert body["text"] == expected["text"]
+        assert body["url"] == expected["url"]
+        assert body["tags"] == expected["tags"]
+        assert body["info"] == expected["info"]

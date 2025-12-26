@@ -1,11 +1,16 @@
 from Test_repo28.endpoints.base import BaseClient
 
 
-class PutMemeByIdAPI:
-    def __init__(self, client: BaseClient):
-        self.client = client
+class PutMemeByIdAPI(BaseClient):
 
-    def update_meme(self, meme_id: int, text: str, url: str, tags: list, info: dict):
+    def update_meme(
+        self,
+        meme_id: int,
+        text: str,
+        url: str,
+        tags: list,
+        info: dict,
+    ):
         body = {
             "id": meme_id,
             "text": text,
@@ -13,4 +18,5 @@ class PutMemeByIdAPI:
             "tags": tags,
             "info": info,
         }
-        return self.client.put(f"/meme/{meme_id}", json=body)
+        self.put(f"/meme/{meme_id}", json=body)
+        return self.response

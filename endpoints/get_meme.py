@@ -1,19 +1,18 @@
 from Test_repo28.endpoints.base import BaseClient
 
 
-class GetMemeAPI:
-    def __init__(self, client: BaseClient):
-        self.client = client
+class GetMemeAPI(BaseClient):
 
     def list_memes(self):
-        return self.client.get("/meme")
+        self.get("/meme")
+        return self.response
 
-    def assert_memes_list_response(self):
-        body = self.client.response.json()
-        assert "data" in body
-        assert isinstance(body["data"], list)
+    def check_response_contains_data(self):
+        body = self.response.json()
+        assert "data" in body, "Response has no 'data' field"
+        assert isinstance(body["data"], list), "'data' is not a list"
 
     def assert_meme_in_list(self, meme_id: int):
-        body = self.client.response.json()
+        body = self.response.json()
         ids = [meme["id"] for meme in body["data"]]
-        assert meme_id in ids
+        assert meme_id in ids, "Meme with given id not found in list"
